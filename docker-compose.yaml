@@ -2,8 +2,6 @@
 x-airflow-common:
   &airflow-common
   build: ./airflow/.
-  environment:
-    &airflow-common-env
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/data:/opt/airflow/data
