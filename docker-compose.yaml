@@ -386,8 +386,9 @@ services:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     ports:
-      - 9000:8080
+      - 9001:8080
     env_file:
       - ./kafka/.env
     profiles:
       - kafka
+
