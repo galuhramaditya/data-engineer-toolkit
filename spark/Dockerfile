@@ -1,4 +1,4 @@
-FROM bitnami/spark:latest
+FROM bitnamilegacy/spark:3.5.6
 
 # Temporarily switch to root to perform system-level operations
 USER root
