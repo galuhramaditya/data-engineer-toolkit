@@ -237,158 +237,149 @@ services:
     profiles:
       - spark
 
-# ================================ KAFKA ================================
+# ======================= KAFKA =======================
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.3.2
+    image: bitnamilegacy/zookeeper:3.7.0
     hostname: zookeeper
     container_name: zookeeper
-    ports:
-      - 2181:2181
     env_file:
       - ./kafka/.env
+    ports:
+      - "2181:2181"
     profiles:
       - kafka
 
   kafka1:
-    image: confluentinc/cp-kafka:7.3.2
+    image: bitnamilegacy/kafka:2.8.1
     hostname: kafka1
     container_name: kafka1
-    ports:
-      - 9092:9092
-      - 29092:29092
-      - 9999:9999
     env_file:
       - ./kafka/.env
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka1:19092,EXTERNAL://127.0.0.1:9092,DOCKER://host.docker.internal:29092
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:19092,EXTERNAL://0.0.0.0:9092,DOCKER://0.0.0.0:29092
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka1:19092,EXTERNAL://127.0.0.1:9092,DOCKER://host.docker.internal:29092
     depends_on:
       - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
     profiles:
       - kafka
 
   kafka2:
-    image: confluentinc/cp-kafka:7.3.2
+    image: bitnamilegacy/kafka:2.8.1
     hostname: kafka2
     container_name: kafka2
-    ports:
-      - 9093:9093
-      - 29093:29093
     env_file:
       - ./kafka/.env
     environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:19093,EXTERNAL://127.0.0.1:9093,DOCKER://host.docker.internal:29093
+      - KAFKA_BROKER_ID=2
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:19093,EXTERNAL://0.0.0.0:9093,DOCKER://0.0.0.0:29093
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka2:19093,EXTERNAL://127.0.0.1:9093,DOCKER://host.docker.internal:29093
     depends_on:
       - zookeeper
+    ports:
+      - "9093:9093"
+      - "29093:29093"
     profiles:
       - kafka
 
   kafka3:
-    image: confluentinc/cp-kafka:7.3.2
+    image: bitnamilegacy/kafka:2.8.1
     hostname: kafka3
     container_name: kafka3
-    ports:
-      - 9094:9094
-      - 29094:29094
     env_file:
       - ./kafka/.env
     environment:
-      KAFKA_BROKER_ID: 3
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:19094,EXTERNAL://127.0.0.1:9094,DOCKER://host.docker.internal:29094
+      - KAFKA_BROKER_ID=3
+      - KAFKA_LISTENERS=INTERNAL://0.0.0.0:19094,EXTERNAL://0.0.0.0:9094,DOCKER://0.0.0.0:29094
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka3:19094,EXTERNAL://127.0.0.1:9094,DOCKER://host.docker.internal:29094
     depends_on:
       - zookeeper
+    ports:
+      - "9094:9094"
+      - "29094:29094"
     profiles:
       - kafka
 
   kafka-schema-registry:
-    image: confluentinc/cp-schema-registry:7.3.2
+    image: confluentinc/cp-schema-registry:7.9.4
     hostname: kafka-schema-registry
     container_name: kafka-schema-registry
-    ports:
-      - 8081:8081
     env_file:
       - ./kafka/.env
     depends_on:
-      - zookeeper
       - kafka1
-    profiles:
-      - kafka
-
-  kafka-rest-proxy:
-    image: confluentinc/cp-kafka-rest:7.3.2
-    hostname: kafka-rest-proxy
-    container_name: kafka-rest-proxy
+      - kafka2
+      - kafka3
     ports:
-      - 8082:8082
-    env_file:
-      - ./kafka/.env
-    depends_on:
-      - zookeeper
-      - kafka1
-      - kafka-schema-registry
-    profiles:
-      - kafka
-
-  ksqldb-server:
-    image: confluentinc/cp-ksqldb-server:7.3.2
-    hostname: ksqldb-server
-    container_name: ksqldb-server
-    ports:
-      - 8088:8088
-    env_file:
-      - ./kafka/.env
-    depends_on:
-      - zookeeper
-      - kafka1
-    profiles:
-      - kafka
-
-  ksqldb-cli:
-    image: confluentinc/cp-ksqldb-cli:7.3.2
-    container_name: ksqldb-cli
-    platform: linux/amd64
-    depends_on:
-      - kafka1
-      - ksqldb-server
-    entrypoint: /bin/sh
-    tty: true
+      - "8081:8081"
     profiles:
       - kafka
 
   kafka-connect:
-    image: confluentinc/cp-kafka-connect:7.3.2
+    build: ./kafka/.
+    hostname: kafka-connect
     container_name: kafka-connect
-    ports:
-      - 8083:8083
-    command:
-      - bash
-      - -c
-      - |
-        echo "Installing Connector"
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
-        confluent-hub install --no-prompt debezium/debezium-connector-postgresql:latest
-        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:latest
-        #
-        echo "Launching Kafka Connect worker"
-        /etc/confluent/docker/run &
-        #
-        sleep infinity
     env_file:
       - ./kafka/.env
     depends_on:
-      - kafka-schema-registry
       - kafka1
+      - kafka2
+      - kafka3
+      - kafka-schema-registry
+    ports:
+      - "8083:8083"
     profiles:
       - kafka
 
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - 9001:8080
+  ksqldb-server:
+    image: confluentinc/cp-ksqldb-server:7.9.4
+    hostname: ksqldb-server
+    container_name: ksqldb-server
     env_file:
       - ./kafka/.env
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - kafka-schema-registry
+    ports:
+      - "8088:8088"
     profiles:
       - kafka
 
+  akhq:
+    image: tchiotludo/akhq:latest
+    container_name: akhq
+    hostname: akhq
+    env_file:
+      - ./kafka/.env
+    environment:
+      AKHQ_CONFIGURATION: |
+        akhq:
+          connections:
+            local-cluster:
+              properties:
+                bootstrap.servers: "kafka1:19092,kafka2:19093,kafka3:19094"
+              schema-registry:
+                url: "http://kafka-schema-registry:8081"
+              connect:
+                - name: "connect-cluster"
+                  url: "http://kafka-connect:8083"
+              ksql:
+                - name: "ksqldb"
+                  url: "http://ksqldb-server:8088"
+          security:
+            default-group: admin
+    depends_on:
+      - kafka1
+      - kafka2
+      - kafka3
+      - kafka-schema-registry
+      - kafka-connect
+    ports:
+      - "9010:8080"
+    profiles:
+      - kafka
