@@ -204,6 +204,7 @@ services:
     working_dir: /spark
     volumes:
       - ./spark/:/spark
+      - ./airflow/data/:/opt/airflow/data
     profiles:
       - spark
 
@@ -219,6 +220,7 @@ services:
     working_dir: /spark
     volumes:
       - ./spark/:/spark
+      - ./airflow/data/:/opt/airflow/data
     profiles:
       - spark
 
@@ -234,6 +236,7 @@ services:
     working_dir: /spark
     volumes:
       - ./spark/:/spark
+      - ./airflow/data/:/opt/airflow/data
     profiles:
       - spark
 
